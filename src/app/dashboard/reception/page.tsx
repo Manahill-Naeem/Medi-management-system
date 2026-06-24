@@ -1,7 +1,8 @@
 import { requireRole } from "@/lib/auth";
 import { getReceptionData } from "@/lib/queries";
+import { getPatientRegistrationUrl } from "@/lib/registration-url";
 import { formatDateTime } from "@/lib/utils";
-import { PatientRegistrationForm } from "@/components/reception/patient-form";
+import { PatientQrPanel } from "@/components/reception/patient-qr-panel";
 import { AppointmentForm } from "@/components/reception/appointment-form";
 import { TestOrderForm } from "@/components/reception/test-order-form";
 import { Badge } from "@/components/ui/badge";
@@ -9,19 +10,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function ReceptionPage() {
   await requireRole(["ADMIN", "RECEPTION"]);
-  const data = await getReceptionData();
+  const [data, registrationUrl] = await Promise.all([
+    getReceptionData(),
+    getPatientRegistrationUrl(),
+  ]);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Reception Desk</h1>
         <p className="text-slate-500">
-          Register patients, schedule appointments, and order tests — information
-          routes automatically to departments
+          Patient QR se khud register hoga. Aap appointment, test order aur payment
+          handle karein.
         </p>
       </div>
 
-      <PatientRegistrationForm />
+      <PatientQrPanel registrationUrl={registrationUrl} />
 
       <div className="grid gap-6 xl:grid-cols-2">
         <AppointmentForm
