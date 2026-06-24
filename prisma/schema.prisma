@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  password     String
+  name         String
+  role         String
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  appointmentsCreated Appointment[] @relation("AppointmentCreatedBy")
+  testOrdersCreated   TestOrder[]   @relation("TestOrderCreatedBy")
+  reports             Report[]
+}
+
+model Department {
+  id          String  @id @default(cuid())
+  name        String
+  code        String  @unique
+  description String?
+
+  users        User[]
+  testTypes    TestType[]
+  appointments Appointment[]
+  testOrders   TestOrder[]
+}
+
+model Patient {
+  id            String   @id @default(cuid())
+  patientNumber String   @unique
+  name          String
+  age           Int
+  gender        String
+  phone         String
+  address       String?
+  bloodGroup    String?
+  cnic          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  appointments Appointment[]
+  testOrders   TestOrder[]
+}
+
+model Appointment {
+  id           String   @id @default(cuid())
+  patientId    String
+  patient      Patient  @relation(fields: [patientId], references: [id])
+  doctorName   String
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  date         DateTime
+  time         String
+  type         String
+  status       String   @default("SCHEDULED")
+  notes        String?
+  createdById  String
+  createdBy    User     @relation("AppointmentCreatedBy", fields: [createdById], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model TestType {
+  id           String     @id @default(cuid())
+  name         String
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  description  String?
+
+  testOrders       TestOrder[]
+  reportTemplates  ReportTemplate[]
+}
+
+model ReportTemplate {
+  id            String   @id @default(cuid())
+  name          String
+  testTypeId    String?
+  testType      TestType? @relation(fields: [testTypeId], references: [id])
+  content       String
+  fieldDefaults String
+  keywordRules  String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  reports Report[]
+}
+
+model TestOrder {
+  id             String     @id @default(cuid())
+  orderNumber    String     @unique
+  patientId      String
+  patient        Patient    @relation(fields: [patientId], references: [id])
+  testTypeId     String
+  testType       TestType   @relation(fields: [testTypeId], references: [id])
+  departmentId   String
+  department     Department @relation(fields: [departmentId], references: [id])
+  priority       String     @default("ROUTINE")
+  status         String     @default("PENDING")
+  clinicalNotes  String?
+  receptionNotes String?
+  createdById    String
+  createdBy      User       @relation("TestOrderCreatedBy", fields: [createdById], references: [id])
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  report Report?
+}
+
+model Report {
+  id          String    @id @default(cuid())
+  testOrderId String    @unique
+  testOrder   TestOrder @relation(fields: [testOrderId], references: [id])
+  templateId  String?
+  template    ReportTemplate? @relation(fields: [templateId], references: [id])
+  typistId    String
+  typist      User      @relation(fields: [typistId], references: [id])
+  keywords    String
+  fieldValues String    @default("{}")
+  content     String
+  status      String    @default("DRAFT")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
